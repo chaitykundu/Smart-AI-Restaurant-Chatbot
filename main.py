@@ -1,31 +1,33 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+import google.generativeai as genai
+from dotenv import load_dotenv
+import os
+
+# Load .env
+load_dotenv()
+API_KEY = os.getenv("GEMINI_API_KEY")
+
+# Configure Gemini
+genai.configure(api_key=API_KEY)
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 app = FastAPI()
 
-# Request model for user inputs
-class UserRequest(BaseModel):
-    location: str
-    cuisine: str
-    price_range: str
+# Request body
+class ChatRequest(BaseModel):
+    message: str
 
-# Mock function to simulate restaurant recommendations based on user input
-def get_restaurant_recommendations(location, cuisine, price_range):
-    # Simulating the recommendation process
-    # This can be replaced with actual logic, e.g., querying a database of restaurants
-    return {
-        "restaurant": "Pizza Palace",
-        "address": "123 Pizza St, City",
-        "discount": "10%",
-        "offer": f"Enjoy {price_range} {cuisine} with a {discount} discount!"
-    }
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    # Prompt logic (can improve later)
+    prompt = f"""
+    You are a friendly AI Food Recommendation Assistant.
+    User message: {req.message}
+    Suggest foods based on user preference. Keep responses short.
+    """
 
-# Route to handle user requests
-@app.post("/get_recommendations/")
-async def get_recommendations(request: UserRequest):
-    location = request.location
-    cuisine = request.cuisine
-    price_range = request.price_range
-    
-    recommendations = get_restaurant_recommendations(location, cuisine, price_range)
-    return recommendations
+    response = model.generate_content(prompt)
+    answer = response.text
+
+    return {"reply": answer}
