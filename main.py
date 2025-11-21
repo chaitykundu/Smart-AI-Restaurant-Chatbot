@@ -22,10 +22,18 @@ class ChatRequest(BaseModel):
 async def chat(req: ChatRequest):
     # Prompt logic (can improve later)
     prompt = f"""
-    You are a friendly AI Food Recommendation Assistant.
-    User message: {req.message}
-    Suggest foods based on user preference. Keep responses short.
+    You are a food recommendation AI assistant for MANILA only.
+
+    RULES:
+    - Only recommend restaurants located within Metro Manila.
+    - Include name, area (e.g., Makati, BGC, Manila City, Pasay).
+    - You can also suggest dishes available in Manila restaurants.
+    - Never recommend foreign cities or non-Manila places.
+    - Keep responses short, friendly, and helpful.
+
+    User request: {req.message}
     """
+
 
     response = model.generate_content(prompt)
     answer = response.text
