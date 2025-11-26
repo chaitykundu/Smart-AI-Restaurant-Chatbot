@@ -81,4 +81,8 @@ def process_chat(req: ChatRequest):
     return {
         "reply": answer,
         "history": chat_sessions[req.session_id]
+<<<<<<< HEAD
     }
+=======
+    }
+>>>>>>> 73227df581c5d6fff1eaaaa50cb7a0ee5613b151
