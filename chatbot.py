@@ -101,6 +101,4 @@ def handle_chat(
         "reply": answer,
 
         "history": chat_sessions[session_id]
-
-        "history": chat_sessions[req.session_id]
     }

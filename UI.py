@@ -4,25 +4,23 @@ from dotenv import load_dotenv
 import os
 import tempfile
 
-<<<<<<< HEAD
+
 # ---------------------------
 # Load .env & Configure Gemini
 # ---------------------------
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
-=======
+
 # Load .env
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Configure Gemini
->>>>>>> 73227df581c5d6fff1eaaaa50cb7a0ee5613b151
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel("gemini-2.5-flash")
 
-# ---------------------------
-<<<<<<< HEAD
+
 # Streamlit Page Settings
 # ---------------------------
 st.set_page_config(page_title="Manila Food Chatbot", page_icon="🍽️")
@@ -31,7 +29,6 @@ st.write("Ask anything related to food or restaurants in **Metro Manila**.")
 
 # ---------------------------
 # Chat History
-=======
 # Streamlit Page Setup
 # ---------------------------
 st.set_page_config(page_title="Manila Food Chatbot", page_icon="🍽️")
@@ -40,7 +37,6 @@ st.write("Chat with the AI and get restaurant and food suggestions in Metro Mani
 
 # ---------------------------
 # Initialize Chat History
->>>>>>> 73227df581c5d6fff1eaaaa50cb7a0ee5613b151
 # ---------------------------
 if "messages" not in st.session_state:
     st.session_state["messages"] = []  # list of {role, content}
@@ -55,7 +51,7 @@ uploaded_file = st.file_uploader(
     help="Attach a file to give the AI more context, like a menu or bill."
 )
 
-<<<<<<< HEAD
+
 # Show chat history
 for msg in st.session_state["messages"]:
     with st.chat_message(msg["role"]):
@@ -104,7 +100,7 @@ if user_input:
     # Save assistant message
     st.session_state["messages"].append({"role": "assistant", "content": answer})
 
-=======
+
 # ---------------------------
 # Chat History Display
 # ---------------------------

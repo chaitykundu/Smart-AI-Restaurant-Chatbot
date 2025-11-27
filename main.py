@@ -1,27 +1,26 @@
-<<<<<<< HEAD
+
 # main.py
 from fastapi import FastAPI, UploadFile, File, Form
 from typing import Optional
 import tempfile
 import os
-=======
 from fastapi import FastAPI
-<<<<<<< HEAD
+
 from pydantic import BaseModel
 import google.generativeai as genai
 from dotenv import load_dotenv
 from qr_utils import generate_qr_for_promo
 import os
-=======
+
 from chatbot import ChatRequest, process_chat
->>>>>>> 73227df581c5d6fff1eaaaa50cb7a0ee5613b151
->>>>>>> d02e1743871bf2d3a8532be29d17412d92f66efb
+
 
 from chatbot import handle_chat
 
 app = FastAPI(title="Manila Food Chatbot API", version="2.0")
+load_dotenv()
+API_KEY = os.getenv("GEMINI_API_KEY")
 
-<<<<<<< HEAD
 # Configure Gemini
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel("gemini-2.5-flash")
