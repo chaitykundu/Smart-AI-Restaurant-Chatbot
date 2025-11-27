@@ -99,5 +99,8 @@ def handle_chat(
 
     return {
         "reply": answer,
+
         "history": chat_sessions[session_id]
+
+        "history": chat_sessions[req.session_id]
     }
