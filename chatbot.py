@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
@@ -29,31 +30,38 @@ class ChatRequest(BaseModel):
 
 
 # -------------------------------------
-# Chat Logic Function
+# Single chat handler: with or without file
 # -------------------------------------
-def process_chat(req: ChatRequest):
+def handle_chat(
+    session_id: str,
+    message: str,
+    file_path: Optional[str] = None,
+    mime_type: Optional[str] = None
+):
     """
-    Handles chat messages, maintains history,
-    communicates with Gemini, and returns the result.
+    Single function for chat:
+    - If file_path is None  -> normal text chat
+    - If file_path is given -> chat with file context
     """
 
-    # Create session if not exists
-    if req.session_id not in chat_sessions:
-        chat_sessions[req.session_id] = []
+    # Ensure session exists
+    if session_id not in chat_sessions:
+        chat_sessions[session_id] = []
 
-    # Append user message
-    chat_sessions[req.session_id].append({
-        "role": "user",
-        "content": req.message
-    })
+    # Append user message if provided
+    if message:
+        chat_sessions[session_id].append({
+            "role": "user",
+            "content": message
+        })
 
     # Build history text
     history_text = ""
-    for msg in chat_sessions[req.session_id]:
+    for msg in chat_sessions[session_id]:
         history_text += f"{msg['role']}: {msg['content']}\n"
 
-    # AI Prompt
-    prompt = f"""
+    # Base system prompt
+    base_prompt = f"""
     You are a food recommendation AI assistant for MANILA only.
 
     RULES:
@@ -65,20 +73,31 @@ def process_chat(req: ChatRequest):
     Conversation History:
     {history_text}
 
-    User request: {req.message}
+    User message: {message if message else "User only uploaded a file."}
     """
 
-    # Gemini API Call
-    response = model.generate_content(prompt)
+    # If there is a file, upload it and include it in the request
+    if file_path is not None:
+        if mime_type:
+            uploaded_file = genai.upload_file(path=file_path, mime_type=mime_type)
+        else:
+            uploaded_file = genai.upload_file(path=file_path)
+
+        # File + prompt together
+        response = model.generate_content([uploaded_file, base_prompt])
+    else:
+        # Text-only
+        response = model.generate_content(base_prompt)
+
     answer = response.text
 
-    # Save AI message to history
-    chat_sessions[req.session_id].append({
+    # Save assistant message
+    chat_sessions[session_id].append({
         "role": "assistant",
         "content": answer
     })
 
     return {
         "reply": answer,
-        "history": chat_sessions[req.session_id]
+        "history": chat_sessions[session_id]
     }
