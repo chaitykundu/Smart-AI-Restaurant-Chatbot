@@ -1,9 +1,8 @@
+from typing import Dict, List, Literal, TypedDict
 from pydantic import BaseModel
-from typing import Optional
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
-
 
 # -------------------------------------
 # Load ENV + Configure Gemini
@@ -11,18 +10,28 @@ import os
 load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
+if not API_KEY:
+    # Fail fast if key is missing – easier to debug
+    raise RuntimeError("GEMINI_API_KEY is not set in the environment.")
+
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 
 # -------------------------------------
-# Chat History (In-Memory)
+# Types & In-Memory Chat Storage
 # -------------------------------------
-chat_sessions = {}   # {session_id: [ {role, content}, ... ]}
+class Message(TypedDict):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+chat_sessions: Dict[str, List[Message]] = {}  # {session_id: [ {role, content}, ... ]}
+MAX_HISTORY_MESSAGES = 12  # limit total messages per session to avoid memory issues
 
 
 # -------------------------------------
-# Request Model
+# Request Model (used by FastAPI)
 # -------------------------------------
 class ChatRequest(BaseModel):
     session_id: str
@@ -30,75 +39,112 @@ class ChatRequest(BaseModel):
 
 
 # -------------------------------------
-# Single chat handler: with or without file
+# System Prompt (Chatbot Behavior)
 # -------------------------------------
-def handle_chat(
-    session_id: str,
-    message: str,
-    file_path: Optional[str] = None,
-    mime_type: Optional[str] = None
-):
-    """
-    Single function for chat:
-    - If file_path is None  -> normal text chat
-    - If file_path is given -> chat with file context
-    """
+SYSTEM_PROMPT = """
+You are a friendly food recommendation AI assistant for Metro Manila ONLY.
 
-    # Ensure session exists
+RULES:
+- Recommend restaurants ONLY within Metro Manila.
+- Always include the restaurant name AND the area (e.g., Makati, BGC, Manila, Pasay, Quezon City, Mandaluyong, Ortigas).
+- Suggest realistic dishes you can typically find in Manila.
+- If the user asks about locations outside Metro Manila, politely explain that you are limited to Metro Manila only.
+- Keep replies short, friendly, and helpful.
+- If the user is vague (e.g., "I'm hungry"), ask 1–2 clarifying questions (budget, cuisine, area) before giving a final recommendation.
+""".strip()
+
+
+# -------------------------------------
+# Helper: Get/Init Session
+# -------------------------------------
+def _get_session_history(session_id: str) -> List[Message]:
     if session_id not in chat_sessions:
         chat_sessions[session_id] = []
+    return chat_sessions[session_id]
 
-    # Append user message if provided
-    if message:
-        chat_sessions[session_id].append({
-            "role": "user",
-            "content": message
-        })
 
-    # Build history text
-    history_text = ""
-    for msg in chat_sessions[session_id]:
-        history_text += f"{msg['role']}: {msg['content']}\n"
+def _trim_history(session_id: str) -> None:
+    """
+    Keep only the last MAX_HISTORY_MESSAGES messages for that session.
+    """
+    history = chat_sessions.get(session_id, [])
+    if len(history) > MAX_HISTORY_MESSAGES:
+        chat_sessions[session_id] = history[-MAX_HISTORY_MESSAGES:]
 
-    # Base system prompt
-    base_prompt = f"""
-    You are a food recommendation AI assistant for MANILA only.
 
-    RULES:
-    - Recommend restaurants ONLY within Metro Manila.
-    - Include the restaurant name and the area (Makati, BGC, Manila, Pasay).
-    - Suggest dishes available in Manila.
-    - Keep replies short, friendly, and helpful.
-
-    Conversation History:
-    {history_text}
-
-    User message: {message if message else "User only uploaded a file."}
+# -------------------------------------
+# Core Chat Logic Function
+# -------------------------------------
+def process_chat(req: ChatRequest):
+    """
+    Handles chat messages, maintains history,
+    communicates with Gemini, and returns the result.
     """
 
-    # If there is a file, upload it and include it in the request
-    if file_path is not None:
-        if mime_type:
-            uploaded_file = genai.upload_file(path=file_path, mime_type=mime_type)
-        else:
-            uploaded_file = genai.upload_file(path=file_path)
+    session_id = req.session_id
+    user_message = (req.message or "").strip()
 
-        # File + prompt together
-        response = model.generate_content([uploaded_file, base_prompt])
-    else:
-        # Text-only
-        response = model.generate_content(base_prompt)
+    # Guard: handle empty message
+    if not user_message:
+        # Don't change history, just respond nicely
+        return {
+            "reply": "Please type something about food or restaurants in Metro Manila 😊",
+            "history": chat_sessions.get(session_id, []),
+        }
 
-    answer = response.text
+    # Get or create history
+    history = _get_session_history(session_id)
 
-    # Save assistant message
-    chat_sessions[session_id].append({
+    # Append user message to history
+    history.append({"role": "user", "content": user_message})
+
+    # Build history text for the prompt
+    # Example:
+    # USER: ...
+    # ASSISTANT: ...
+    history_text_lines = []
+    for msg in history:
+        role_upper = msg["role"].upper()
+        history_text_lines.append(f"{role_upper}: {msg['content']}")
+    history_text = "\n".join(history_text_lines) if history_text_lines else "No previous conversation."
+
+    # Final prompt to Gemini
+    prompt = f"""
+{SYSTEM_PROMPT}
+
+Conversation so far:
+{history_text}
+
+Now respond as the assistant to the last user message in a concise, friendly way.
+ASSISTANT:
+""".strip()
+
+    try:
+        # Gemini API Call
+        response = model.generate_content(prompt)
+        answer = (response.text or "").strip()
+    except Exception as e:
+        # Fallback in case of API error
+        answer = (
+            "Sorry, I'm having trouble accessing my recommendations right now. "
+            "Please try again in a moment."
+        )
+        # In a real app, you would log `e` using proper logging
+
+    if not answer:
+        # Another safety net
+        answer = "Hmm, I couldn't generate a response. Could you please try asking in a different way?"
+
+    # Save AI message to history
+    history.append({
         "role": "assistant",
-        "content": answer
+        "content": answer,
     })
+
+    # Trim history so it doesn't grow forever
+    _trim_history(session_id)
 
     return {
         "reply": answer,
-
-        "history": chat_sessions[session_id]
+        "history": history,
     }
