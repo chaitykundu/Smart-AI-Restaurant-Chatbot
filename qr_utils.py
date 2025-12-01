@@ -1,29 +1,55 @@
-# qr_utils.py
 import qrcode
 import uuid
+import base64
+from io import BytesIO
 import os
 
-# Ensure the folder exists
+# QR folder (optional, not required for base64 return)
 QR_FOLDER = "qr_codes"
 os.makedirs(QR_FOLDER, exist_ok=True)
 
-def generate_qr_for_promo(promo_text: str):
-    """
-    Generate a unique QR code for a promo.
-    
-    Returns:
-        promo_code (str): short unique promo code
-        file_path (str): path to saved QR image
-    """
-    # Generate short unique code
-    promo_code = str(uuid.uuid4())[:8]
+# Temporary in-memory store for tracking promo codes
+promo_store = {}
+# Structure:
+# {
+#     "token123": {
+#         "offer": "...",
+#         "used": False
+#     }
+# }
 
-    # Create promo URL for QR
-    promo_url = f"https://yourapp.com/promo/redeem?code={promo_code}&promo={promo_text}"
+
+def generate_unique_qr(offer_text: str):
+    """
+    Generate a one-time QR for the given offer.
+    Returns:
+        {
+          "token": str,
+          "qr_code": base64_image_string
+        }
+    """
+
+    # Create unique token
+    token = str(uuid.uuid4())
+
+    # Save record in store
+    promo_store[token] = {
+        "offer": offer_text,
+        "used": False
+    }
+
+    # QR content (your future redeem endpoint)
+    qr_url = f"https://yourapp.com/promo/redeem?token={token}"
 
     # Generate QR image
-    img = qrcode.make(promo_url)
-    file_path = os.path.join(QR_FOLDER, f"{promo_code}.png")
-    img.save(file_path)
+    qr_img = qrcode.make(qr_url)
 
-    return promo_code, file_path
+    # Convert to base64
+    buffer = BytesIO()
+    qr_img.save(buffer, format="PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+    return {
+        "token": token,
+        "qr_code": qr_base64
+    }
