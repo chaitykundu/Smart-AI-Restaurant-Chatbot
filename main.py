@@ -1,10 +1,13 @@
-from fastapi import FastAPI
-from chatbot import ChatRequest, process_chat
+from fastapi import FastAPI, UploadFile, File, Form
+from chatbot import process_chat_file
 
-
-app = FastAPI(title="Manila Food Chatbot API", version="1.0")
+app = FastAPI(title="Manila Food Chatbot API", version="2.0")
 
 
 @app.post("/chat")
-async def chat(req: ChatRequest):
-    return process_chat(req)
+async def chat(
+    session_id: str = Form(...),
+    message: str = Form(""),
+    file: UploadFile = File(None)
+):
+    return await process_chat_file(session_id, message, file)
