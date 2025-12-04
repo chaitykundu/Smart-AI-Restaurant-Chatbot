@@ -1,24 +1,23 @@
 from typing import Dict, List, Literal, TypedDict
 from fastapi import UploadFile
-import google.generativeai as genai
+import openai  # Import OpenAI API
 from dotenv import load_dotenv
 import os
 
 from file import prepare_gemini_file
-from qr_utils import generate_unique_qr   # <-- QR system
+from qr_code import generate_unique_qr  # QR code logic
 
 
 # -------------------------------------
-# Load ENV + Configure Gemini
+# Load ENV + Configure OpenAI GPT
 # -------------------------------------
 load_dotenv()
-API_KEY = os.getenv("GEMINI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-if not API_KEY:
-    raise RuntimeError("GEMINI_API_KEY is missing.")
+if not OPENAI_API_KEY:
+    raise RuntimeError("OPENAI_API_KEY is missing.")
 
-genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel("gemini-2.5-flash")
+openai.api_key = OPENAI_API_KEY
 
 
 # -------------------------------------
@@ -90,73 +89,23 @@ async def fetch_discount_from_backend(food_query: str):
 # Chat Logic (Text + Image + Discount + QR)
 # -------------------------------------
 async def process_chat_file(session_id: str, message: str, upload: UploadFile):
-
-    history = _load_session(session_id)
+    history = _load_session(session_id)  # Load existing history or start new session
     message = (message or "").strip()
 
-    # Handle file upload
+    # Process file (optional)
     gemini_file = await prepare_gemini_file(upload)
     if gemini_file:
         history.append({"role": "user", "content": f"[User uploaded: {upload.filename}]"})
 
 
-    # Store user message
+    # Store the user message
     if message:
         history.append({"role": "user", "content": message})
 
+    # Build the conversation context to pass to OpenAI
+    history_text = "\n".join(f"{msg['role'].upper()}: {msg['content']}" for msg in history)
 
-    # ------------------------------------------
-    # 1) USER SAID YES → GENERATE QR CODE
-    # ------------------------------------------
-    if session_id in pending_offers and is_yes(message):
-        offer = pending_offers.pop(session_id)
-
-        offer_text = f"{offer['restaurant']} | {offer['item']} | {offer['discount_percent']}% OFF"
-        qr_result = generate_unique_qr(offer_text)
-
-        reply = (
-            "Great! Here is your one-time promo QR code 🎉\n\n"
-            f"Offer: {offer_text}\n"
-            f"Token: {qr_result['token']}\n\n"
-            "Scan this QR:\n"
-            f"data:image/png;base64,{qr_result['qr_code']}"
-        )
-
-        history.append({"role": "assistant", "content": reply})
-        _trim_history(session_id)
-
-        return {"reply": reply, "history": history}
-
-
-    # ------------------------------------------
-    # 2) USER ASKED FOR DISCOUNT
-    # ------------------------------------------
-    if is_discount_question(message):
-        offer = await fetch_discount_from_backend(message)
-
-        if offer:
-            pending_offers[session_id] = offer
-
-            reply = (
-                f"Yes! There is a {offer['discount_percent']}% discount on "
-                f"{offer['item']} at {offer['restaurant']} in {offer['area']}.\n\n"
-                "Would you like me to generate a one-time QR code for this offer?"
-            )
-
-            history.append({"role": "assistant", "content": reply})
-            _trim_history(session_id)
-
-            return {"reply": reply, "history": history}
-        # else → let Gemini handle
-
-
-    # ------------------------------------------
-    # 3) Normal Gemini Response
-    # ------------------------------------------
-    history_text = "\n".join(
-        f"{msg['role'].upper()}: {msg['content']}" for msg in history
-    )
-
+    # Prepare the prompt for OpenAI
     prompt = f"""
 {SYSTEM_PROMPT}
 
@@ -166,20 +115,27 @@ Conversation:
 Now respond as ASSISTANT:
 """.strip()
 
-    gemini_inputs = [prompt]
-
-    if message:
-        gemini_inputs.append(message)
-    if gemini_file:
-        gemini_inputs.append(gemini_file)
-
+    # Make the API call to OpenAI with the full conversation context
     try:
-        response = model.generate_content(gemini_inputs)
-        answer = (response.text or "").strip()
-    except:
+        response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",  # Use the GPT-4o-mini model
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},  # System message for context
+                *[{"role": msg["role"], "content": msg["content"]} for msg in history]  # Include the full conversation
+            ],
+            temperature=0.7
+        )
+
+        # Extract the assistant's response
+        answer = response['choices'][0]['message']['content'].strip()
+
+    except Exception as e:
+        print(f"Error while calling OpenAI API: {e}")  # Log error for better debugging
         answer = "Sorry, I couldn't process your request right now."
 
+    # Save assistant's response to history
     history.append({"role": "assistant", "content": answer})
-    _trim_history(session_id)
+    _trim_history(session_id)  # Limit history size if needed
 
     return {"reply": answer, "history": history}
+

@@ -6,4 +6,5 @@ qrcode==8.2
 pillow==12.0.0
 pillow
 python-multipart
+openai ==0.28.0
 
