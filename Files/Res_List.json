@@ -1,0 +1,146 @@
+[
+    {
+        "name": "Ono Kai",
+        "category": "Fusion",
+        "address": "8459 Basement 1, Connector Hostel, Kalayaan Avenue, Corner Don Pedro, Makati City",
+        "description": "Great ambience – lowkey and tasteful lounge vibes. Solid food and good music when the function begins after dinner."
+    },
+    {
+        "name": "Just Thai",
+        "category": "Thai",
+        "address": "Molito - Alabang",
+        "description": "Highly satisfying Thai flavors but mainstream. Their space in Molito is okay. A bit pricey."
+    },
+    {
+        "name": "Bamba",
+        "category": "Fusion",
+        "address": "57 Aguirre Ave, Parañaque",
+        "description": "Very good and inventive dishes – on the pricier side. Pretty good ambience."
+    },
+    {
+        "name": "Aya",
+        "category": "Filipino",
+        "address": "The Balmori Suites, Hidalgo Dr, Rockwell Center, Makati City",
+        "description": "A modern take on Filipino interiors. Great hearty food with a touch of class and a story."
+    },
+    {
+        "name": "Mangiamo",
+        "category": "Italian",
+        "address": "Sedeño cor Valero Street, Salcedo Village, Makati City",
+        "description": "Cozy, like dining at your Italian grandmother’s home. Authentic and consistently great food."
+    },
+    {
+        "name": "Fresca Trattoria",
+        "category": "Italian",
+        "address": "G/F, The Grand Midori, Bolanos, Legazpi Village, Makati City",
+        "description": "Modern but authentic Italian restaurant. Favorites include Uni pasta and homemade tiramisu."
+    },
+    {
+        "name": "Chingolo",
+        "category": "Comfort Food",
+        "address": "Molito Lifestyle Center, Ayala Alabang, Muntinlupa City",
+        "description": "A deli, restaurant and bar with great steaks, cocktails, and ambiance."
+    },
+    {
+        "name": "Pablo",
+        "category": "Spanish",
+        "address": "Salcedo Village, G/F The Picasso Boutique Residences, Makati City",
+        "description": "Neighborhood Spanish bistro with hearty food and very friendly staff."
+    },
+    {
+        "name": "Offbeat",
+        "category": "Filipino Fusion",
+        "address": "2F Ayala Triangle Gardens Tower 2, Makati City",
+        "description": "Playful twists on Filipino food and drinks. Must-try spot in Makati."
+    },
+    {
+        "name": "Kong Noodles",
+        "category": "Asian",
+        "address": "Ayala Triangle Gardens, Makati City",
+        "description": "Innovative take on Asian noodles with bold flavors."
+    },
+    {
+        "name": "Tsumura",
+        "category": "Japanese",
+        "address": "3F Ayala Triangle Gardens Tower 2, Makati City",
+        "description": "Top Japanese restaurant known for clean, elevated, authentic dishes."
+    },
+    {
+        "name": "Miyazaki",
+        "category": "Japanese",
+        "address": "Molito Lifestyle Center, Alabang",
+        "description": "Crowd favorite with high-quality sushi and memorable flavors."
+    },
+    {
+        "name": "Canton Road",
+        "category": "Chinese",
+        "address": "Level 3, Shangri-La at the Fort, Taguig City",
+        "description": "Traditional and innovative Chinese cuisine with superb service."
+    },
+    {
+        "name": "12/10",
+        "category": "Japanese",
+        "address": "8 Rockwell Dr, Makati City",
+        "description": "Experimental Japanese cuisine mixing modern and traditional flavors."
+    },
+    {
+        "name": "Automat",
+        "category": "Filipino",
+        "address": "Building A, 2F, 2316 Chino Roces Ave, Makati City",
+        "description": "Modern Filipino cuisine with warm hospitality."
+    },
+    {
+        "name": "Gallery by Chele",
+        "category": "Filipino",
+        "address": "5/F Clipp Center, BGC, Taguig",
+        "description": "Great for dates. Amazing course meals without needing alcohol pairings."
+    },
+    {
+        "name": "Bombvinos",
+        "category": "Filipino",
+        "address": "Unit 3, Zone Sports Center, 7224 Malugay Street, Makati City",
+        "description": "Innovative Filipino dishes. Surprisingly underrated spot."
+    },
+    {
+        "name": "Tsokolateria-Pamana",
+        "category": "Filipino",
+        "address": "Greenhills Shopping Center, San Juan City",
+        "description": "Homey, nostalgic Filipino meals like your grandmother used to cook."
+    },
+    {
+        "name": "Nikkei Nama Bar",
+        "category": "Japanese",
+        "address": "One Bonifacio High Street Mall, BGC",
+        "description": "Japanese–Latin fusion with great cocktails and sushi."
+    },
+    {
+        "name": "El Born",
+        "category": "Catalan-Mediterranean",
+        "address": "2/F Mitsukoshi BGC",
+        "description": "Home of Manila’s best cheesecake. Gooey, cheesy perfection."
+    },
+    {
+        "name": "Uma Nota",
+        "category": "Brazilian-Japanese Fusion",
+        "address": "Shangri-La The Fort, BGC",
+        "description": "Perfect for celebrations. Great food, drinks, and ambiance."
+    },
+    {
+        "name": "Cibo",
+        "category": "Italian",
+        "address": "UP Town Center, Quezon City",
+        "description": "Iconic Italian chain loved for consistently delicious dishes."
+    },
+    {
+        "name": "Tori Tori Kushiyaki",
+        "category": "Japanese",
+        "address": "197 Wilson, San Juan City",
+        "description": "Best izakaya in San Juan. Amazing sushi and rice meals."
+    },
+    {
+        "name": "Kong",
+        "category": "Asian",
+        "address": "Ayala Triangle Gardens, Makati City",
+        "description": "Delicious Asian noodles and standout green curry."
+    }
+]
