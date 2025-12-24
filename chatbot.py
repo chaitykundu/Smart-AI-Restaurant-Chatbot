@@ -2,6 +2,7 @@ from typing import Dict, List, Literal, TypedDict
 from fastapi import UploadFile
 import os, json, base64
 from dotenv import load_dotenv
+import openai  # Ensure openai is imported
 
 # Helpers
 from file import prepare_uploaded_file
@@ -14,18 +15,6 @@ load_dotenv()
 API_KEY = os.getenv("OPENAI_API_KEY")
 if not API_KEY:
     raise RuntimeError("OPENAI_API_KEY is missing.")
-
-# -----------------------------------------
-# SDK Detection
-# -----------------------------------------
-USE_NEW_SDK = False
-try:
-    from openai import OpenAI
-    client = OpenAI(api_key=API_KEY)
-    USE_NEW_SDK = True
-except Exception:
-    import openai
-    openai.api_key = API_KEY
 
 # -----------------------------------------
 # Load Restaurants
@@ -125,6 +114,7 @@ You are **Choosie**, a friendly and stylish restaurant recommendation assistant 
 "Awesome! I’ve generated a one-time QR code for you. Enjoy your meal, and don’t forget to flex it on your Instagram. 😋"
 
 """.strip()
+
 # -----------------------------------------
 # Helpers
 # -----------------------------------------
@@ -182,7 +172,7 @@ async def process_chat_file(session_id: str, message: str, upload: UploadFile = 
     if message.lower() not in {"hi", "hello", "hey", "sup", "yo"}:  # simple safety net
         curated = [r for r in RESTAURANTS if message.lower() in " ".join([r["name"], r["category"], r["description"]]).lower()][:3]
         if curated:
-            curated_block = "\n\nVibe-matched picks:\n"
+            # Directly add restaurant details without "Vibe-matched picks" header
             for r in curated:
                 curated_block += f"• {r['name']} — {r['description']} ({r['category']})\n  {r['address']}\n"
 
@@ -194,7 +184,7 @@ async def process_chat_file(session_id: str, message: str, upload: UploadFile = 
             messages.append(msg)
 
     # Vision support
-    if USE_NEW_SDK and uploaded:
+    if uploaded:
         content_block = [{"type": "text", "text": user_content}]
         b64 = base64.b64encode(uploaded["data"]).decode()
         content_block.append({
@@ -207,24 +197,17 @@ async def process_chat_file(session_id: str, message: str, upload: UploadFile = 
 
     # ——— CALL OPENAI ———
     try:
-        if USE_NEW_SDK:
-            resp = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=messages,
-                temperature=0.8,
-                max_tokens=800
-            )
-            ai_answer = resp.choices[0].message.content.strip()
-        else:
-            resp = openai.ChatCompletion.create(
-                model="gpt-4o-mini",
-                messages=messages,
-                temperature=0.8,
-                max_tokens=800
-            )
-            ai_answer = resp["choices"][0]["message"]["content"].strip()
+        resp = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.8,
+            max_tokens=800
+        )
+        ai_answer = resp["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        ai_answer = "Oops, something glitched. Try again?"
+        # Catch all exceptions
+        print(f"Error occurred: {e}")
+        ai_answer = "Sorry, something went wrong. Please try again later."
 
     final_answer = ai_answer + curated_block
 
