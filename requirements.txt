@@ -7,4 +7,5 @@ pillow==12.0.0
 pillow
 python-multipart
 openai ==2.9.0
+streamlit
 
